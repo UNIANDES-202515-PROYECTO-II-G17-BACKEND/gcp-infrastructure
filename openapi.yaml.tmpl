@@ -1,0 +1,153 @@
+openapi: 3.0.0
+info:
+  title: medi-supply-api
+  version: 1.0.0
+
+servers:
+  - url: https://${API_DOMAIN}
+
+x-google-endpoints:
+  - name: ${API_DOMAIN}
+    allowCors: true
+
+components:
+  securitySchemes:
+    jwt_auth:
+      type: http
+      scheme: bearer
+
+security:
+  - jwt_auth: []
+
+paths:
+  /public/v1/health:
+    get:
+      summary: Health público
+      security: []
+      x-google-backend:
+        address: ${MS_TELEMETRIA_URL}
+        protocol: h2
+      responses:
+        '200': { description: OK }
+
+  /{country}/v1/compras/ordenes:
+    get:
+      summary: Listar órdenes de compra
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema: { type: string, enum: [CO, MX, EC, PE] }
+      x-google-backend:
+        address: ${MS_COMPRAS_URL}
+        protocol: h2
+        path_translation: APPEND_PATH_TO_ADDRESS
+      x-google-issuer: "${JWT_ISSUER}"
+      x-google-jwks_uri: "${JWT_JWKS_URI}"
+      x-google-audiences: "${JWT_AUDIENCE}"
+      responses: { '200': { description: OK } }
+
+  /{country}/v1/inventario/items:
+    get:
+      summary: Listar items de inventario
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema: { type: string, enum: [CO, MX, EC, PE] }
+      x-google-backend:
+        address: ${MS_INVENTARIO_URL}
+      x-google-issuer: "${JWT_ISSUER}"
+      x-google-jwks_uri: "${JWT_JWKS_URI}"
+      x-google-audiences: "${JWT_AUDIENCE}"
+      responses: { '200': { description: OK } }
+
+  /{country}/v1/pedidos:
+    post:
+      summary: Crear pedido
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema: { type: string, enum: [CO, MX, EC, PE] }
+      x-google-backend:
+        address: ${MS_PEDIDOS_URL}
+      x-google-issuer: "${JWT_ISSUER}"
+      x-google-jwks_uri: "${JWT_JWKS_URI}"
+      x-google-audiences: "${JWT_AUDIENCE}"
+      responses: { '201': { description: Creado } }
+
+  /{country}/v1/logistica/envios:
+    get:
+      summary: Consultar envíos
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema: { type: string, enum: [CO, MX, EC, PE] }
+      x-google-backend:
+        address: ${MS_LOGISTICA_URL}
+      x-google-issuer: "${JWT_ISSUER}"
+      x-google-jwks_uri: "${JWT_JWKS_URI}"
+      x-google-audiences: "${JWT_AUDIENCE}"
+      responses: { '200': { description: OK } }
+
+  /{country}/v1/ventas/ordenes:
+    get:
+      summary: Órdenes de venta / CRM
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema: { type: string, enum: [CO, MX, EC, PE] }
+      x-google-backend:
+        address: ${MS_VENTAS_CRM_URL}
+      x-google-issuer: "${JWT_ISSUER}"
+      x-google-jwks_uri: "${JWT_JWKS_URI}"
+      x-google-audiences: "${JWT_AUDIENCE}"
+      responses: { '200': { description: OK } }
+
+  /{country}/v1/integraciones/proveedores:
+    get:
+      summary: Proveedores externos
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema: { type: string, enum: [CO, MX, EC, PE] }
+      x-google-backend:
+        address: ${MS_INTEGRACIONES_URL}
+      x-google-issuer: "${JWT_ISSUER}"
+      x-google-jwks_uri: "${JWT_JWKS_URI}"
+      x-google-audiences: "${JWT_AUDIENCE}"
+      responses: { '200': { description: OK } }
+
+  /{country}/v1/usuarios/me:
+    get:
+      summary: Perfil del usuario
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema: { type: string, enum: [CO, MX, EC, PE] }
+      x-google-backend:
+        address: ${MS_USUARIOS_AUTENTICACION_URL}
+      x-google-issuer: "${JWT_ISSUER}"
+      x-google-jwks_uri: "${JWT_JWKS_URI}"
+      x-google-audiences: "${JWT_AUDIENCE}"
+      responses: { '200': { description: OK } }
+
+  /{country}/v1/telemetria/eventos:
+    post:
+      summary: Registrar evento
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema: { type: string, enum: [CO, MX, EC, PE] }
+      x-google-backend:
+        address: ${MS_TELEMETRIA_URL}
+      x-google-issuer: "${JWT_ISSUER}"
+      x-google-jwks_uri: "${JWT_JWKS_URI}"
+      x-google-audiences: "${JWT_AUDIENCE}"
+      responses: { '202': { description: Aceptado } }

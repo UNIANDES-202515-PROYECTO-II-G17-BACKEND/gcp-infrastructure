@@ -21,6 +21,7 @@ variable "service_images" {
     "ms-integraciones"           = "us-central1-docker.pkg.dev/misw4301-g26/project-images/ms-integraciones:latest"
     "ms-usuarios-autenticacion"  = "us-central1-docker.pkg.dev/misw4301-g26/project-images/ms-usuarios-autenticacion:latest"
     "ms-telemetria"              = "us-central1-docker.pkg.dev/misw4301-g26/project-images/ms-telemetria:latest"
+    "ms-app-web"                 = "us-central1-docker.pkg.dev/misw4301-g26/project-images/ms-app-web:latest"
   }
 }
 
@@ -43,7 +44,7 @@ variable "countries" {
 # Pub/Sub tópicos base
 variable "pubsub_topics" {
   type    = list(string)
-  default = ["telemetria.eventos", "pedidos.creados", "inventario.actualizado", "integraciones.webhooks"]
+  default = ["pedidos", "inventario", "pedidos", "ventas-crm", "integraciones", "telemetria", "compras"]
 }
 
 # Memorystore Redis

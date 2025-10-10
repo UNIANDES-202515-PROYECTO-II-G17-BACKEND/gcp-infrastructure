@@ -56,6 +56,20 @@ resource "google_redis_instance" "redis" {
   authorized_network = "projects/${var.project_id}/global/networks/${local.vpc_network}"
 }
 
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = "projects/${var.project_id}/global/networks/${local.vpc_network}"
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_range.name]
+}
+
+resource "google_compute_global_address" "private_ip_range" {
+  name          = "cloudsql-private-ip-range"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = "projects/${var.project_id}/global/networks/${local.vpc_network}"
+}
+
 # ---------- Cloud SQL (1 instancia) ----------
 resource "google_sql_database_instance" "pg" {
   name             = "pg-main"
@@ -64,13 +78,18 @@ resource "google_sql_database_instance" "pg" {
 
   settings {
     tier = var.db_tier
+
     ip_configuration {
-      ipv4_enabled    = false
+      ipv4_enabled    = true         # <-- habilita IP pública
       private_network = "projects/${var.project_id}/global/networks/${local.vpc_network}"
     }
+
     activation_policy = "ALWAYS"
   }
+
+  depends_on = [google_service_networking_connection.private_vpc_connection]
 }
+
 
 resource "google_sql_user" "pguser" {
   instance = google_sql_database_instance.pg.name
@@ -197,60 +216,4 @@ resource "google_api_gateway_gateway" "gw" {
   gateway_id = local.gateway_name
   api_config = google_api_gateway_api_config.cfg.id
   region     = var.region
-}
-
-# ---------- Crear schemas por país en cada DB ----------
-resource "null_resource" "create_country_schemas" {
-  for_each = local.db_per_service
-
-  triggers = {
-    sql_hash       = filesha256("${path.module}/crea_schemas.sql")
-    db_name        = each.value
-    instance_cn    = google_sql_database_instance.pg.connection_name
-    db_user        = var.db_user
-  }
-
-  provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-    command = <<-EOT
-      set -euo pipefail
-
-      PROXY_BIN="$${PROXY_BIN:-cloud-sql-proxy}"
-      if ! command -v "$${PROXY_BIN}" >/dev/null 2>&1; then
-        echo "[INFO] Descargando Cloud SQL Proxy..."
-        curl -sSL -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.10.1/cloud-sql-proxy.linux.amd64
-        chmod +x cloud-sql-proxy
-        PROXY_BIN="./cloud-sql-proxy"
-      else
-        PROXY_BIN="$(command -v $${PROXY_BIN})"
-      fi
-
-      INSTANCE="${google_sql_database_instance.pg.connection_name}"
-      echo "[INFO] Iniciando proxy contra instancia: $${INSTANCE}"
-      "$${PROXY_BIN}" --private-ip --port 5432 "$${INSTANCE}" >/dev/null 2>&1 &
-      PROXY_PID=$!
-
-      for i in $(seq 1 30); do
-        (echo > /dev/tcp/127.0.0.1/5432) >/dev/null 2>&1 && break || sleep 1
-      done
-
-      export PGPASSWORD='${var.db_password}'
-      DBNAME='${each.value}'
-      echo "[INFO] Creando/verificando schemas en DB: $${DBNAME}"
-
-      psql "host=127.0.0.1 port=5432 dbname=$${DBNAME} user=${var.db_user} sslmode=disable" \
-        -v ON_ERROR_STOP=1 \
-        -f "${path.module}/crea_schemas.sql"
-
-      kill $${PROXY_PID} || true
-      wait $${PROXY_PID} 2>/dev/null || true
-      echo "[OK] Schemas creados/verificados en $${DBNAME}"
-    EOT
-  }
-
-  depends_on = [
-    google_sql_database_instance.pg,
-    google_sql_user.pguser,
-    google_sql_database.db
-  ]
 }

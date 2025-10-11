@@ -130,7 +130,7 @@ resource "google_cloud_run_v2_service" "svc" {
   for_each = toset(local.services)
   name     = each.key
   location = var.region
-  ingress  = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+  ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
     service_account = google_service_account.ms_sa[each.key].email
@@ -191,7 +191,6 @@ data "template_file" "openapi" {
     API_DOMAIN   = var.api_domain
     JWT_ISSUER   = var.jwt_issuer
     JWT_JWKS_URI = var.jwt_jwks_uri
-    JWT_AUDIENCE = var.jwt_audience
 
     MS_COMPRAS_URL                = google_cloud_run_v2_service.svc["ms-compras"].uri
     MS_INVENTARIO_URL             = google_cloud_run_v2_service.svc["ms-inventario"].uri

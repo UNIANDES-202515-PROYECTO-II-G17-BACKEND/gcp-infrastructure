@@ -3,8 +3,6 @@ info:
   title: MediSupply API
   version: "1.0.0"
 
-# (optional) keep only if you actually terminate on custom domain
-host: medisupply-gw-5k2l9pfv.uc.gateway.dev
 basePath: /
 schemes: ["https"]
 consumes: ["application/json"]
@@ -25,7 +23,6 @@ securityDefinitions:
     authorizationUrl: ""
     x-google-issuer: "${JWT_ISSUER}"
     x-google-jwks_uri: "${JWT_JWKS_URI}"
-    x-google-audiences: "${JWT_AUDIENCE}"
 
 # Por defecto TODO requiere JWT:
 security:

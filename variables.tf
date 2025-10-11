@@ -66,25 +66,23 @@ variable "db_version" {
   type = string
   default = "POSTGRES_15"
 }
+
 variable "db_user" {
   type = string
-  default = "appuser"
 }
+
 variable "db_password" {
-  type = string
-  default = "CHANGEME-STRONG-PASS"
+  type      = string
+  sensitive = true
 }
 
 # JWT (servicio de usuarios)
 variable "jwt_issuer" {
   type = string
-  default = "https://auth.medisupply.com"
+  default = "ms-usuarios-autenticacion"
 }
+
 variable "jwt_jwks_uri" {
   type = string
-  default = "https://auth.medisupply.com/.well-known/jwks.json"
-}
-variable "jwt_audience" {
-  type = string
-  default = "medi-supply-api"
+  default = "/.well-known/jwks.json"
 }

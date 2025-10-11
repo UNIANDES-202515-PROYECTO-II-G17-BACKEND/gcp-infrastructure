@@ -4,7 +4,7 @@ info:
   version: "1.0.0"
 
 # (optional) keep only if you actually terminate on custom domain
-host: api.midominio.com
+host: medisupply-gw-5k2l9pfv.uc.gateway.dev
 basePath: /
 schemes: ["https"]
 consumes: ["application/json"]

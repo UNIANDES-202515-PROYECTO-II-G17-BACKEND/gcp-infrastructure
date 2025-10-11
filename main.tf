@@ -103,6 +103,13 @@ resource "google_sql_database" "db" {
   instance = google_sql_database_instance.pg.name
 }
 
+locals {
+  pg_private_ip = one([
+    for ip in google_sql_database_instance.pg.ip_address : ip.ip_address
+    if ip.type == "PRIVATE"
+  ])
+}
+
 # ---------- Pub/Sub ----------
 resource "google_pubsub_topic" "topics" {
   for_each = toset(var.pubsub_topics)
@@ -121,7 +128,6 @@ resource "google_storage_bucket" "buckets" {
 # ---------- Cloud Run v2 ----------
 resource "google_cloud_run_v2_service" "svc" {
   for_each = toset(local.services)
-
   name     = each.key
   location = var.region
   ingress  = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
@@ -146,6 +152,8 @@ resource "google_cloud_run_v2_service" "svc" {
             DB_NAME                  = local.db_per_service[each.key]
             DB_USER                  = var.db_user
             DB_PASS                  = var.db_password
+            DB_HOST                  = local.pg_private_ip
+            DB_PORT                  = 5432
             INSTANCE_CONNECTION_NAME = google_sql_database_instance.pg.connection_name
             SERVICE_NAME             = each.key
             PROJECT_ID               = var.project_id

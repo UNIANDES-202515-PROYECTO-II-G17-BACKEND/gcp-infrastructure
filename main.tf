@@ -176,7 +176,7 @@ resource "google_cloud_run_v2_service_iam_member" "invoker" {
   location = var.region
   name     = google_cloud_run_v2_service.svc[each.key].name
   role     = "roles/run.invoker"
-  member   = "serviceAccount:${google_service_account.gateway_sa.email}"
+  member   = "allUsers"
 }
 
 # ---------- API Gateway ----------
@@ -226,15 +226,4 @@ resource "google_api_gateway_gateway" "gw" {
   gateway_id = local.gateway_name
   api_config = google_api_gateway_api_config.cfg.id
   region     = var.region
-}
-
-data "google_project" "proj" {}
-
-resource "google_cloud_run_v2_service_iam_member" "apigw_invoker_all" {
-  for_each = toset(local.services)
-  project  = var.project_id
-  location = var.region
-  name     = google_cloud_run_v2_service.svc[each.key].name
-  role     = "roles/run.invoker"
-  member   = "serviceAccount:service-${data.google_project.proj.number}@gcp-sa-apigateway.iam.gserviceaccount.com"
 }

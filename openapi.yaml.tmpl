@@ -74,6 +74,7 @@ paths:
       x-google-backend:
         address: "${MS_PEDIDOS_URL}"
         jwt_audience: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
       summary: Listar pedidos (opcional por ID)
       parameters:
         - $ref: "#/parameters/CountryHeader"
@@ -99,6 +100,7 @@ paths:
       x-google-backend:
         address: "${MS_PEDIDOS_URL}"
         jwt_audience: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
       summary: Crear un pedido
       parameters:
         - name: body
@@ -127,6 +129,7 @@ paths:
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
         jwt_audience: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
       summary: Login (emite JWT)
       parameters:
         - name: body
@@ -160,6 +163,7 @@ paths:
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
         jwt_audience: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
       summary: Register user
       parameters:
         - name: body
@@ -188,6 +192,7 @@ paths:
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
         jwt_audience: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
       summary: Refresh token
       parameters:
         - name: body
@@ -218,6 +223,7 @@ paths:
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
         jwt_audience: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
       summary: Perfil del usuario autenticado
       parameters:
         - $ref: "#/parameters/CountryHeader"

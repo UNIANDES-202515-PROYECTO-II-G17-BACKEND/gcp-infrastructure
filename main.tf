@@ -196,11 +196,11 @@ data "template_file" "openapi" {
   }
 }
 
+
 resource "google_api_gateway_api_config" "cfg" {
   provider      = google-beta
-  api           = google_api_gateway_api.api.api_id
-  api_config_id = "medi-config"
-
+  api             = google_api_gateway_api.api.api_id
+  api_config_id = "medi-config-${formatdate("YYYYMMDD-HHmmss", timestamp())}"
   openapi_documents {
     document {
       path     = "openapi.yaml"
@@ -208,8 +208,11 @@ resource "google_api_gateway_api_config" "cfg" {
     }
   }
 
-  depends_on = [google_cloud_run_v2_service.svc]
+  lifecycle {
+    create_before_destroy = true
+  }
 }
+
 
 resource "google_api_gateway_gateway" "gw" {
   provider   = google-beta

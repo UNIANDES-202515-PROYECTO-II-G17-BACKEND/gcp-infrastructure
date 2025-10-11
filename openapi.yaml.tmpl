@@ -217,6 +217,7 @@ paths:
       operationId: Usuarios_Me
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        jwt_audience: "${MS_USUARIOS_AUTENTICACION_URL}"
       summary: Perfil del usuario autenticado
       parameters:
         - $ref: "#/parameters/CountryHeader"
@@ -227,14 +228,3 @@ paths:
         401:
           description: Unauthorized
           schema: { $ref: "#/definitions/ErrorResponse" }
-
-  /.well-known/jwks.json:
-    get:
-      operationId: JWKS_Get
-      security: []  # público y sin X-Country
-      x-google-backend:
-        address: "${MS_USUARIOS_AUTENTICACION_URL}"
-      summary: JWKS
-      responses:
-        200:
-          description: OK

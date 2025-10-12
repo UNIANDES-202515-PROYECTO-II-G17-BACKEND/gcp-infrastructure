@@ -15,20 +15,6 @@ parameters:
     required: true
     type: string
 
-# ===== Seguridad (JWT) =====
-securityDefinitions:
-  jwt_auth:
-    type: oauth2
-    flow: implicit
-    authorizationUrl: ""
-    x-google-issuer: "${JWT_ISSUER}"
-    x-google-jwks_uri: "${JWT_JWKS_URI}"
-    x-google-audiences: "medisupply-api"
-
-# Por defecto TODO requiere JWT:
-security:
-  - jwt_auth: []
-
 definitions:
   ErrorResponse:
     type: object
@@ -73,8 +59,8 @@ paths:
       operationId: Pedidos_List
       x-google-backend:
         address: "${MS_PEDIDOS_URL}"
-        jwt_audience: "${MS_PEDIDOS_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
       summary: Listar pedidos (opcional por ID)
       parameters:
         - $ref: "#/parameters/CountryHeader"
@@ -99,8 +85,8 @@ paths:
       operationId: Pedidos_Create
       x-google-backend:
         address: "${MS_PEDIDOS_URL}"
-        jwt_audience: "${MS_PEDIDOS_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
       summary: Crear un pedido
       parameters:
         - name: body
@@ -122,14 +108,69 @@ paths:
           description: Server error
           schema: { $ref: "#/definitions/ErrorResponse" }
 
+
+  /v1/inventario:
+    get:
+      operationId: inventario_list
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Inventario List operations
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: id
+          in: query
+          type: string
+          required: false
+      responses:
+        200:
+          description: OK
+        401:
+          description: Unauthorized
+          schema: { $ref: "#/definitions/ErrorResponse" }
+        403:
+          description: Forbidden
+          schema: { $ref: "#/definitions/ErrorResponse" }
+        500:
+          description: Server error
+          schema: { $ref: "#/definitions/ErrorResponse" }
+
+  /v1/inventario:
+    post:
+      operationId: inventario_update
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Inventario update/create operations
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: id
+          in: query
+          type: string
+          required: false
+      responses:
+        200:
+          description: OK
+        401:
+          description: Unauthorized
+          schema: { $ref: "#/definitions/ErrorResponse" }
+        403:
+          description: Forbidden
+          schema: { $ref: "#/definitions/ErrorResponse" }
+        500:
+          description: Server error
+          schema: { $ref: "#/definitions/ErrorResponse" }
+
   /v1/auth/login:
     post:
       operationId: Auth_Login
-      security: []   # público
+      security: []
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
-        jwt_audience: "${MS_USUARIOS_AUTENTICACION_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
       summary: Login (emite JWT)
       parameters:
         - name: body
@@ -159,11 +200,10 @@ paths:
   /v1/auth/register:
     post:
       operationId: Auth_Register
-      security: []   # público
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
-        jwt_audience: "${MS_USUARIOS_AUTENTICACION_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
       summary: Register user
       parameters:
         - name: body
@@ -188,11 +228,11 @@ paths:
   /v1/auth/refresh:
     post:
       operationId: Auth_Refresh
-      security: []   # público
+      security: []
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
-        jwt_audience: "${MS_USUARIOS_AUTENTICACION_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
       summary: Refresh token
       parameters:
         - name: body
@@ -222,8 +262,8 @@ paths:
       operationId: Usuarios_Me
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
-        jwt_audience: "${MS_USUARIOS_AUTENTICACION_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
       summary: Perfil del usuario autenticado
       parameters:
         - $ref: "#/parameters/CountryHeader"

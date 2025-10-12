@@ -158,6 +158,7 @@ resource "google_cloud_run_v2_service" "svc" {
             SERVICE_NAME             = each.key
             PROJECT_ID               = var.project_id
             REGION                   = var.region
+            JWT_SECRET_KEY           = "M1swN3JvNWMtZzI2LXNlY3JldC1mb3Itand0LTIwMjUtbWlzd0A0MzAxIQ=="
           }
         )
         content {

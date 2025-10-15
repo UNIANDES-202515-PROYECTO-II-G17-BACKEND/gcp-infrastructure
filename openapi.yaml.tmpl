@@ -15,6 +15,13 @@ parameters:
     required: true
     type: string
 
+  ProductoIdParam:          # <-- NUEVO: parámetro reutilizable de ruta
+    name: producto_id
+    in: path
+    required: true
+    type: string
+    format: uuid
+
 definitions:
   ErrorResponse:
     type: object
@@ -69,17 +76,10 @@ paths:
           type: string
           required: false
       responses:
-        200:
-          description: OK
-        401:
-          description: Unauthorized
-          schema: { $ref: "#/definitions/ErrorResponse" }
-        403:
-          description: Forbidden
-          schema: { $ref: "#/definitions/ErrorResponse" }
-        500:
-          description: Server error
-          schema: { $ref: "#/definitions/ErrorResponse" }
+        200: { description: OK }
+        401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
+        403: { description: Forbidden,   schema: { $ref: "#/definitions/ErrorResponse" } }
+        500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
 
     post:
       operationId: Pedidos_Create
@@ -89,90 +89,279 @@ paths:
         disable_auth: true
       summary: Crear un pedido
       parameters:
+        - $ref: "#/parameters/CountryHeader"
         - name: body
           in: body
           required: true
           schema: { $ref: "#/definitions/PedidoCreate" }
-        - $ref: "#/parameters/CountryHeader"
       responses:
-        201:
-          description: Creado
-          schema: { $ref: "#/definitions/Pedido" }
-        400:
-          description: Bad request
-          schema: { $ref: "#/definitions/ErrorResponse" }
-        401:
-          description: Unauthorized
-          schema: { $ref: "#/definitions/ErrorResponse" }
-        500:
-          description: Server error
-          schema: { $ref: "#/definitions/ErrorResponse" }
+        201: { description: Creado, schema: { $ref: "#/definitions/Pedido" } }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+        401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
+        500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
 
-
-  /v1/inventario:
-    get:
-      operationId: inventario_list
-      x-google-backend:
-        address: "${MS_PEDIDOS_URL}"
-        path_translation: "APPEND_PATH_TO_ADDRESS"
-        disable_auth: true
-      summary: Inventario List operations
-      parameters:
-        - $ref: "#/parameters/CountryHeader"
-        - name: id
-          in: query
-          type: string
-          required: false
-      responses:
-        200:
-          description: OK
-        401:
-          description: Unauthorized
-          schema: { $ref: "#/definitions/ErrorResponse" }
-        403:
-          description: Forbidden
-          schema: { $ref: "#/definitions/ErrorResponse" }
-        500:
-          description: Server error
-          schema: { $ref: "#/definitions/ErrorResponse" }
-
-  /v1/inventario:
+  /v1/inventario/producto:
     post:
-      operationId: inventario_update
+      operationId: producto_crear
       x-google-backend:
-        address: "${MS_PEDIDOS_URL}"
+        address: "${MS_INVENTARIO_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
         disable_auth: true
-      summary: Inventario update/create operations
+      summary: Crear producto
       parameters:
         - $ref: "#/parameters/CountryHeader"
-        - name: id
-          in: query
-          type: string
-          required: false
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [sku, nombre]
+            properties:
+              sku: { type: string }
+              nombre: { type: string }
+              categoria: { type: string }
+              controlado: { type: boolean }
+              temp_min: { type: number, format: float }
+              temp_max: { type: number, format: float }
       responses:
-        200:
-          description: OK
-        401:
-          description: Unauthorized
-          schema: { $ref: "#/definitions/ErrorResponse" }
-        403:
-          description: Forbidden
-          schema: { $ref: "#/definitions/ErrorResponse" }
-        500:
-          description: Server error
-          schema: { $ref: "#/definitions/ErrorResponse" }
+        200: { description: OK }
+
+  /v1/inventario/producto/{producto_id}/certificacion:
+    post:
+      operationId: producto_certificacion
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Agregar certificación a producto
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProductoIdParam"     # <-- usa el param de ruta
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [autoridad, tipo, vigencia]
+            properties:
+              autoridad: { type: string }
+              tipo: { type: string }
+              vigencia: { type: string, format: date-time }
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/bodega:
+    post:
+      operationId: bodega_crear
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Crear bodega
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [direccion, ciudad, pais]
+            properties:
+              direccion: { type: string }
+              ciudad: { type: string }
+              pais: { type: string }
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/ubicacion:
+    post:
+      operationId: ubicacion_crear
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Crear ubicación
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [bodega_id, pasillo, estante, posicion]
+            properties:
+              bodega_id: { type: string, format: uuid }
+              pasillo: { type: string }
+              estante: { type: string }
+              posicion: { type: string }
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/lote:
+    post:
+      operationId: lote_crear
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Crear lote
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [producto_id, codigo]
+            properties:
+              producto_id: { type: string, format: uuid }
+              codigo: { type: string }
+              vencimiento: { type: string, format: date-time }
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/entrada:
+    post:
+      operationId: registro_entrada
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Registrar entrada
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [lote_id, ubicacion_id, cantidad]
+            properties:
+              lote_id: { type: string, format: uuid }
+              ubicacion_id: { type: string, format: uuid }
+              cantidad: { type: integer, format: int32 }
+              estado: { type: string }
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/salida/fefo:
+    post:
+      operationId: registro_salida
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Salida FEFO
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: producto_id
+          in: query
+          required: true
+          type: string
+          format: uuid
+        - name: cantidad
+          in: query
+          required: true
+          type: integer
+          format: int32
+        - name: ubicacion_id
+          in: query
+          required: false
+          type: string
+          format: uuid
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/stock/{producto_id}:
+    get:
+      operationId: stock_total_producto
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Stock total por producto
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProductoIdParam"
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/stock/{producto_id}/detalle:
+    get:
+      operationId: detalle_stock_producto
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Detalle de stock por producto
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProductoIdParam"
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/producto/{producto_id}/detalle:
+    get:
+      operationId: detalle_producto
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Detalle de producto
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProductoIdParam"
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/producto/{producto_id}/ubicaciones:
+    get:
+      operationId: stock_producto_ubicaciones
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Ubicaciones con stock del producto
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProductoIdParam"
+      responses:
+        200: { description: OK }
+
+  /v1/inventario/productos/todos:
+    get:
+      operationId: productos_todos
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar todos los productos (paginado)
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: limit
+          in: query
+          type: integer
+          format: int32
+          default: 50
+        - name: offset
+          in: query
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        200: { description: OK }
 
   /v1/auth/login:
     post:
       operationId: Auth_Login
-      security: []
+      security: []   # explícitamente sin auth
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
         disable_auth: true
       summary: Login (emite JWT)
       parameters:
+        - $ref: "#/parameters/CountryHeader"
         - name: body
           in: body
           required: true
@@ -182,7 +371,6 @@ paths:
             properties:
               username: { type: string }
               password: { type: string }
-        - $ref: "#/parameters/CountryHeader"
       responses:
         200:
           description: OK
@@ -193,19 +381,19 @@ paths:
               refresh_token: { type: string }
               token_type:    { type: string }
               expires_in:    { type: integer, format: int32 }
-        401:
-          description: Unauthorized
-          schema: { $ref: "#/definitions/ErrorResponse" }
+        401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
 
   /v1/auth/register:
     post:
       operationId: Auth_Register
+      security: []
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
         disable_auth: true
       summary: Register user
       parameters:
+        - $ref: "#/parameters/CountryHeader"
         - name: body
           in: body
           required: true
@@ -217,13 +405,9 @@ paths:
               role: { type: string }
               institution_name: { type: string }
               password: { type: string }
-        - $ref: "#/parameters/CountryHeader"
       responses:
-        201:
-          description: Created
-        400:
-          description: Bad request
-          schema: { $ref: "#/definitions/ErrorResponse" }
+        201: { description: Created }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
 
   /v1/auth/refresh:
     post:
@@ -235,6 +419,7 @@ paths:
         disable_auth: true
       summary: Refresh token
       parameters:
+        - $ref: "#/parameters/CountryHeader"
         - name: body
           in: body
           required: true
@@ -243,7 +428,6 @@ paths:
             required: [refresh_token]
             properties:
               refresh_token: { type: string }
-        - $ref: "#/parameters/CountryHeader"
       responses:
         200:
           description: OK
@@ -253,9 +437,7 @@ paths:
               access_token:  { type: string }
               token_type:    { type: string }
               expires_in:    { type: integer, format: int32 }
-        401:
-          description: Unauthorized
-          schema: { $ref: "#/definitions/ErrorResponse" }
+        401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
 
   /v1/usuarios/me:
     get:
@@ -268,9 +450,5 @@ paths:
       parameters:
         - $ref: "#/parameters/CountryHeader"
       responses:
-        200:
-          description: OK
-          schema: { $ref: "#/definitions/MeResponse" }
-        401:
-          description: Unauthorized
-          schema: { $ref: "#/definitions/ErrorResponse" }
+        200: { description: OK, schema: { $ref: "#/definitions/MeResponse" } }
+        401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }

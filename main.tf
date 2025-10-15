@@ -10,16 +10,18 @@ locals {
     "ms-telemetria"
   ]
 
+  frontend_service = "ms-app-web"
+
   # DB por microservicio (nombre de DB en Postgres)
   db_per_service = {
-    "ms-compras"                 = "db_ms_compras"
-    "ms-inventario"              = "db_ms_inventario"
-    "ms-pedidos"                 = "db_ms_pedidos"
-    "ms-logistica"               = "db_ms_logistica"
-    "ms-ventas-crm"              = "db_ms_ventas_crm"
-    "ms-integraciones"           = "db_ms_integraciones"
-    "ms-usuarios-autenticacion"  = "db_ms_usuarios_aut"
-    "ms-telemetria"              = "db_ms_telemetria"
+    "ms-compras"                = "db_ms_compras"
+    "ms-inventario"             = "db_ms_inventario"
+    "ms-pedidos"                = "db_ms_pedidos"
+    "ms-logistica"              = "db_ms_logistica"
+    "ms-ventas-crm"             = "db_ms_ventas_crm"
+    "ms-integraciones"          = "db_ms_integraciones"
+    "ms-usuarios-autenticacion" = "db_ms_usuarios_aut"
+    "ms-telemetria"             = "db_ms_telemetria"
   }
 
   api_name     = "medisupply-api"
@@ -33,8 +35,9 @@ resource "google_service_account" "gateway_sa" {
   display_name = "Gateway SA"
 }
 
+# Incluir backend + frontend para SAs
 resource "google_service_account" "ms_sa" {
-  for_each     = toset(local.services)
+  for_each     = toset(setunion(local.services, [local.frontend_service]))
   account_id   = "sa-${each.key}"
   display_name = "SA ${each.key}"
 }
@@ -80,7 +83,7 @@ resource "google_sql_database_instance" "pg" {
     tier = var.db_tier
 
     ip_configuration {
-      ipv4_enabled    = true         # <-- habilita IP pública
+      ipv4_enabled    = true
       private_network = "projects/${var.project_id}/global/networks/${local.vpc_network}"
     }
 
@@ -89,7 +92,6 @@ resource "google_sql_database_instance" "pg" {
 
   depends_on = [google_service_networking_connection.private_vpc_connection]
 }
-
 
 resource "google_sql_user" "pguser" {
   instance = google_sql_database_instance.pg.name
@@ -125,7 +127,7 @@ resource "google_storage_bucket" "buckets" {
   force_destroy               = false
 }
 
-# ---------- Cloud Run v2 ----------
+# ---------- Cloud Run v2 (Backends) ----------
 resource "google_cloud_run_v2_service" "svc" {
   for_each = toset(local.services)
   name     = each.key
@@ -144,6 +146,7 @@ resource "google_cloud_run_v2_service" "svc" {
 
     containers {
       image = lookup(var.service_images, each.key)
+
       dynamic "env" {
         for_each = merge(
           var.common_env,
@@ -170,12 +173,51 @@ resource "google_cloud_run_v2_service" "svc" {
   }
 }
 
-# Permitir que el Gateway invoque cada servicio
+# ---------- Cloud Run v2 (Frontend) ----------
+resource "google_cloud_run_v2_service" "frontend" {
+  name     = local.frontend_service # "ms-app-web"
+  location = var.region
+  ingress  = "INGRESS_TRAFFIC_ALL"
+
+  template {
+    service_account = google_service_account.ms_sa[local.frontend_service].email
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 1
+    }
+
+    containers {
+      image = lookup(var.service_images, local.frontend_service)
+
+      ports {
+        container_port = 8080
+      }
+
+      env {
+        name  = "GATEWAY_BASE_URL"
+        value = "https://${google_api_gateway_gateway.gw.default_hostname}"
+      }
+    }
+  }
+}
+
+# ---------- IAM: permitir invocación pública ----------
+# Backends
 resource "google_cloud_run_v2_service_iam_member" "invoker" {
   for_each = toset(local.services)
   project  = var.project_id
   location = var.region
   name     = google_cloud_run_v2_service.svc[each.key].name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+# Frontend
+resource "google_cloud_run_v2_service_iam_member" "invoker_frontend" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.frontend.name
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
@@ -204,11 +246,11 @@ data "template_file" "openapi" {
   }
 }
 
-
 resource "google_api_gateway_api_config" "cfg" {
   provider      = google-beta
-  api             = google_api_gateway_api.api.api_id
+  api           = google_api_gateway_api.api.api_id
   api_config_id = "medi-config-${formatdate("YYYYMMDD-HHmmss", timestamp())}"
+
   openapi_documents {
     document {
       path     = "openapi.yaml"
@@ -220,7 +262,6 @@ resource "google_api_gateway_api_config" "cfg" {
     create_before_destroy = true
   }
 }
-
 
 resource "google_api_gateway_gateway" "gw" {
   provider   = google-beta

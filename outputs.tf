@@ -11,3 +11,11 @@ output "cloudsql_instance" { value = google_sql_database_instance.pg.connection_
 output "dbs" {
   value = { for k, v in google_sql_database.db : k => v.name }
 }
+
+output "frontend_url" {
+  value = google_cloud_run_v2_service.frontend.uri
+}
+
+output "api_gateway_url" {
+  value = "https://${google_api_gateway_gateway.gw.default_hostname}"
+}

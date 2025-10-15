@@ -15,7 +15,7 @@ parameters:
     required: true
     type: string
 
-  ProductoIdParam:          # <-- NUEVO: parámetro reutilizable de ruta
+  ProductoIdParam:
     name: producto_id
     in: path
     required: true
@@ -100,6 +100,17 @@ paths:
         401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
         500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
 
+    options:
+      operationId: CorsPreflightPedidos
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
   /v1/inventario/producto:
     post:
       operationId: producto_crear
@@ -126,6 +137,17 @@ paths:
       responses:
         200: { description: OK }
 
+    options:
+      operationId: CorsPreflightInventarioProducto
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
   /v1/inventario/producto/{producto_id}/certificacion:
     post:
       operationId: producto_certificacion
@@ -136,7 +158,7 @@ paths:
       summary: Agregar certificación a producto
       parameters:
         - $ref: "#/parameters/CountryHeader"
-        - $ref: "#/parameters/ProductoIdParam"     # <-- usa el param de ruta
+        - $ref: "#/parameters/ProductoIdParam"
         - name: body
           in: body
           required: true
@@ -149,6 +171,19 @@ paths:
               vigencia: { type: string, format: date-time }
       responses:
         200: { description: OK }
+
+    options:
+      operationId: CorsPreflightInventarioProductoCertificacion
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ProductoIdParam"
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
 
   /v1/inventario/bodega:
     post:
@@ -172,6 +207,17 @@ paths:
               pais: { type: string }
       responses:
         200: { description: OK }
+
+    options:
+      operationId: CorsPreflightInventarioBodega
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
 
   /v1/inventario/ubicacion:
     post:
@@ -197,6 +243,17 @@ paths:
       responses:
         200: { description: OK }
 
+    options:
+      operationId: CorsPreflightInventarioUbicacion
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
   /v1/inventario/lote:
     post:
       operationId: lote_crear
@@ -219,6 +276,17 @@ paths:
               vencimiento: { type: string, format: date-time }
       responses:
         200: { description: OK }
+
+    options:
+      operationId: CorsPreflightInventarioLote
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
 
   /v1/inventario/entrada:
     post:
@@ -243,6 +311,17 @@ paths:
               estado: { type: string }
       responses:
         200: { description: OK }
+
+    options:
+      operationId: CorsPreflightInventarioEntrada
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
 
   /v1/inventario/salida/fefo:
     post:
@@ -272,6 +351,17 @@ paths:
       responses:
         200: { description: OK }
 
+    options:
+      operationId: CorsPreflightInventarioSalidaFefo
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
   /v1/inventario/stock/{producto_id}:
     get:
       operationId: stock_total_producto
@@ -285,6 +375,19 @@ paths:
         - $ref: "#/parameters/ProductoIdParam"
       responses:
         200: { description: OK }
+
+    options:
+      operationId: CorsPreflightInventarioStock
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ProductoIdParam"
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
 
   /v1/inventario/stock/{producto_id}/detalle:
     get:
@@ -300,6 +403,19 @@ paths:
       responses:
         200: { description: OK }
 
+    options:
+      operationId: CorsPreflightInventarioStockDetalle
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ProductoIdParam"
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
   /v1/inventario/producto/{producto_id}/detalle:
     get:
       operationId: detalle_producto
@@ -314,6 +430,19 @@ paths:
       responses:
         200: { description: OK }
 
+    options:
+      operationId: CorsPreflightInventarioProductoDetalle
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ProductoIdParam"
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
   /v1/inventario/producto/{producto_id}/ubicaciones:
     get:
       operationId: stock_producto_ubicaciones
@@ -327,6 +456,19 @@ paths:
         - $ref: "#/parameters/ProductoIdParam"
       responses:
         200: { description: OK }
+
+    options:
+      operationId: CorsPreflightInventarioProductoUbicaciones
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ProductoIdParam"
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
 
   /v1/inventario/productos/todos:
     get:
@@ -350,6 +492,17 @@ paths:
           default: 0
       responses:
         200: { description: OK }
+
+    options:
+      operationId: CorsPreflightInventarioProductosTodos
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
 
   /v1/auth/login:
     post:
@@ -383,6 +536,17 @@ paths:
               expires_in:    { type: integer, format: int32 }
         401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
 
+    options:
+      operationId: CorsPreflightAuthLogin
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
   /v1/auth/register:
     post:
       operationId: Auth_Register
@@ -408,6 +572,17 @@ paths:
       responses:
         201: { description: Created }
         400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflightAuthRegister
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
 
   /v1/auth/refresh:
     post:
@@ -439,6 +614,17 @@ paths:
               expires_in:    { type: integer, format: int32 }
         401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
 
+    options:
+      operationId: CorsPreflightAuthRefresh
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
   /v1/usuarios/me:
     get:
       operationId: Usuarios_Me
@@ -452,3 +638,14 @@ paths:
       responses:
         200: { description: OK, schema: { $ref: "#/definitions/MeResponse" } }
         401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflightUsuariosMe
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }

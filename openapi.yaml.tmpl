@@ -554,6 +554,68 @@ paths:
       responses:
         204: { description: No Content }
 
+  /v1/usuarios:
+    get:
+      operationId: Usuarios_Listar
+      x-google-backend:
+        address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar usuarios
+      description: Devuelve la lista de usuarios filtrando opcionalmente por rol.
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: role
+          in: query
+          required: false
+          type: string
+          enum: [admin, institutional_customer, seller]
+          description: Rol por el que se filtra.
+        - name: offset
+          in: query
+          required: false
+          type: integer
+          format: int32
+          minimum: 0
+          default: 0
+          description: Desplazamiento para paginación.
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1000
+          default: 100
+          description: Tamaño de página.
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/UserResponse"
+        400:
+          description: Bad request
+          schema: { $ref: "#/definitions/ErrorResponse" }
+        401:
+          description: Unauthorized
+          schema: { $ref: "#/definitions/ErrorResponse" }
+        500:
+          description: Server error
+          schema: { $ref: "#/definitions/ErrorResponse" }
+
+    options:
+      operationId: CorsPreflightUsuarios
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
   /v1/auth/register:
     post:
       operationId: Auth_Register

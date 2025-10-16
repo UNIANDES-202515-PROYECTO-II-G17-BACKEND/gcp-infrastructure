@@ -29,6 +29,13 @@ parameters:
     type: string
     format: uuid
 
+  OrdenCompraIdParam:
+    name: oc_id
+    in: path
+    required: true
+    type: string
+    format: uuid
+
 definitions:
   ErrorResponse:
     type: object
@@ -66,6 +73,55 @@ definitions:
       roles:
         type: array
         items: { type: string }
+
+  ItemOCIn:
+    type: object
+    required: [producto_id, cantidad]
+    properties:
+      producto_id: { type: string, format: uuid }
+      cantidad: { type: integer, format: int32, minimum: 1 }
+      precio_unitario: { type: number, format: double }
+      impuesto_pct: { type: number, format: double, minimum: 0, maximum: 100 }
+      descuento_pct: { type: number, format: double, minimum: 0, maximum: 100 }
+      sku_proveedor: { type: string }
+
+  OrdenCompraCreate:
+    type: object
+    required: [proveedor_id, items]
+    properties:
+      proveedor_id: { type: string, format: uuid }
+      pedido_ref:   { type: string, format: uuid }
+      moneda:       { type: string, minLength: 1, maxLength: 3 }
+      notas:        { type: string, maxLength: 500 }
+      codigo:       { type: string, maxLength: 32 }
+      items:
+        type: array
+        items: { $ref: "#/definitions/ItemOCIn" }
+
+  ItemOCOut:
+    allOf:
+      - $ref: "#/definitions/ItemOCIn"
+      - type: object
+        properties:
+          id:   { type: string, format: uuid }
+          oc_id: { type: string, format: uuid }
+
+  OrdenCompraOut:
+    type: object
+    properties:
+      id:          { type: string, format: uuid }
+      codigo:      { type: string }
+      proveedor_id: { type: string, format: uuid }
+      pedido_ref:  { type: string, format: uuid }
+      estado:      { type: string, enum: [ABIERTA, ENVIADA, PARCIAL, COMPLETA, CANCELADA] }
+      subtotal:    { type: number, format: double }
+      impuesto_total: { type: number, format: double }
+      total:       { type: number, format: double }
+      moneda:      { type: string }
+      notas:       { type: string }
+      items:
+        type: array
+        items: { $ref: "#/definitions/ItemOCOut" }
 
 paths:
   /v1/pedidos:
@@ -967,6 +1023,209 @@ paths:
       security: []
       parameters:
         - $ref: "#/parameters/ProductoIdParam"
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/ordenes-compra:
+    post:
+      operationId: OC_Crear
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Crear Orden de Compra
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: body
+          in: body
+          required: true
+          schema: { $ref: "#/definitions/OrdenCompraCreate" }
+      responses:
+        201:
+          description: Created
+          schema: { $ref: "#/definitions/OrdenCompraOut" }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+        404: { description: Not found,   schema: { $ref: "#/definitions/ErrorResponse" } }
+        500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    get:
+      operationId: OC_Listar
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar Órdenes de Compra
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: proveedor_id
+          in: query
+          type: string
+          format: uuid
+          required: false
+        - name: estado
+          in: query
+          type: string
+          required: false
+          description: ABIERTA|ENVIADA|PARCIAL|COMPLETA|CANCELADA
+        - name: q
+          in: query
+          type: string
+          required: false
+          description: Búsqueda por código
+        - name: limit
+          in: query
+          type: integer
+          format: int32
+          default: 50
+        - name: offset
+          in: query
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items: { $ref: "#/definitions/OrdenCompraOut" }
+        500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_OC_List_Create
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/ordenes-compra/{oc_id}:
+    get:
+      operationId: OC_Obtener
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Obtener Orden de Compra por ID
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/OrdenCompraIdParam"
+      responses:
+        200: { description: OK, schema: { $ref: "#/definitions/OrdenCompraOut" } }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    delete:
+      operationId: OC_Eliminar
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Eliminar Orden de Compra
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/OrdenCompraIdParam"
+      responses:
+        204: { description: No Content }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_OC_ById
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/OrdenCompraIdParam"
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/ordenes-compra/{oc_id}/marcar-enviada:
+    post:
+      operationId: OC_MarcarEnviada
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Marcar OC como ENVIADA
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/OrdenCompraIdParam"
+      responses:
+        200: { description: OK, schema: { $ref: "#/definitions/OrdenCompraOut" } }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_OC_Enviada
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/OrdenCompraIdParam"
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/ordenes-compra/{oc_id}/marcar-completa:
+    post:
+      operationId: OC_MarcarCompleta
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Marcar OC como COMPLETA
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/OrdenCompraIdParam"
+      responses:
+        200: { description: OK, schema: { $ref: "#/definitions/OrdenCompraOut" } }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_OC_Completa
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/OrdenCompraIdParam"
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/ordenes-compra/{oc_id}/cancelar:
+    post:
+      operationId: OC_Cancelar
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Cancelar Orden de Compra
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/OrdenCompraIdParam"
+      responses:
+        200: { description: OK, schema: { $ref: "#/definitions/OrdenCompraOut" } }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_OC_Cancelar
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/OrdenCompraIdParam"
       x-google-backend:
         address: "${MS_COMPRAS_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"

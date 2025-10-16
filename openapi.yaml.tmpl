@@ -22,6 +22,13 @@ parameters:
     type: string
     format: uuid
 
+  ProveedorIdParam:
+    name: proveedor_id
+    in: path
+    required: true
+    type: string
+    format: uuid
+
 definitions:
   ErrorResponse:
     type: object
@@ -645,6 +652,261 @@ paths:
       security: []
       x-google-backend:
         address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/proveedores:
+    post:
+      operationId: Proveedores_Crear
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Crear proveedor
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+      responses:
+        201: { description: Creado }
+        409: { description: Conflicto (documento/pais existente), schema: { $ref: "#/definitions/ErrorResponse" } }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    get:
+      operationId: Proveedores_Listar
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar proveedores
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: q
+          in: query
+          type: string
+          required: false
+          description: Búsqueda por nombre/documento
+        - name: pais
+          in: query
+          type: string
+          required: false
+        - name: activo
+          in: query
+          type: boolean
+          required: false
+        - name: limit
+          in: query
+          type: integer
+          format: int32
+          default: 50
+        - name: offset
+          in: query
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        200: { description: OK }
+
+    options:
+      operationId: CorsPreflightProveedores
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+
+  /v1/proveedores/{proveedor_id}:
+    get:
+      operationId: Proveedores_Detalle
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Obtener proveedor por ID
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProveedorIdParam"
+      responses:
+        200: { description: OK }
+        404: { description: No encontrado, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    patch:
+      operationId: Proveedores_Actualizar
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Actualizar proveedor
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProveedorIdParam"
+        - name: body
+          in: body
+          required: true
+          schema: { type: object }
+      responses:
+        200: { description: OK }
+        404: { description: No encontrado, schema: { $ref: "#/definitions/ErrorResponse" } }
+        409: { description: Conflicto (documento/pais), schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    delete:
+      operationId: Proveedores_Eliminar
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Eliminar proveedor
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProveedorIdParam"
+      responses:
+        204: { description: No Content }
+        404: { description: No encontrado, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflightProveedoresById
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ProveedorIdParam"
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+
+  /v1/proveedores/{proveedor_id}/productos:
+    post:
+      operationId: Proveedores_AsociarProducto
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Asociar producto a proveedor (upsert)
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProveedorIdParam"
+        - name: body
+          in: body
+          required: true
+          schema: { type: object }
+      responses:
+        201: { description: Creado/Actualizado }
+        404: { description: Proveedor no encontrado, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    get:
+      operationId: Proveedores_ListarProductos
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar productos de un proveedor
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProveedorIdParam"
+        - name: activo
+          in: query
+          type: boolean
+          required: false
+      responses:
+        200: { description: OK }
+
+    options:
+      operationId: CorsPreflightProveedoresProductos
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ProveedorIdParam"
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+
+  /v1/proveedores/{proveedor_id}/productos/{producto_id}:
+    delete:
+      operationId: Proveedores_DesasociarProducto
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Desasociar producto de proveedor
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProveedorIdParam"
+        - $ref: "#/parameters/ProductoIdParam"
+      responses:
+        204: { description: No Content }
+        404: { description: Relación no encontrada, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflightProveedoresProductosById
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ProveedorIdParam"
+        - $ref: "#/parameters/ProductoIdParam"
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+
+  /v1/proveedores/{producto_id}/proveedores:
+    get:
+      operationId: Productos_ListarProveedores
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar proveedores para un producto
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ProductoIdParam"
+        - name: activo_relacion
+          in: query
+          type: boolean
+          required: false
+        - name: activo_proveedor
+          in: query
+          type: boolean
+          required: false
+        - name: limit
+          in: query
+          type: integer
+          format: int32
+          default: 50
+        - name: offset
+          in: query
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        200: { description: OK }
+
+    options:
+      operationId: CorsPreflightProductosProveedores
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ProductoIdParam"
+      x-google-backend:
+        address: "${MS_COMPRAS_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
         disable_auth: true
       responses:

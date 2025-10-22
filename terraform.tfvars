@@ -7,3 +7,5 @@ db_password = "clave-super-secreta"
 
 jwt_issuer   = "ms-usuarios-autenticacion"
 jwt_jwks_uri = "https://ms-usuarios-autenticacion-435513124363.us-central1.run.app/.well-known/jwks.json"
+
+gateway_base_url  = "https://medisupply-gw-5k2l9pfv.uc.gateway.dev"

@@ -86,3 +86,12 @@ variable "jwt_jwks_uri" {
   type = string
   default = "/.well-known/jwks.json"
 }
+
+variable "gateway_base_url" {
+  type        = string
+  description = "Base URL pública del API Gateway (p.ej. https://medisupply-gw-xxxxx.uc.gateway.dev)"
+  validation {
+    condition     = can(regex("^https://", var.gateway_base_url))
+    error_message = "gateway_base_url debe empezar por https://"
+  }
+}

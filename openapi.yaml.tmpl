@@ -36,26 +36,19 @@ parameters:
     type: string
     format: uuid
 
+  PedidoIdParam:
+    name: pedido_id
+    in: path
+    required: true
+    type: string
+    format: uuid
+
 definitions:
   ErrorResponse:
     type: object
     properties:
       message: { type: string }
       code: { type: integer, format: int32 }
-
-  PedidoCreate:
-    type: object
-    required: [cliente_id, items]
-    properties:
-      cliente_id: { type: string }
-      items:
-        type: array
-        items:
-          type: object
-          required: [sku, qty]
-          properties:
-            sku: { type: string }
-            qty: { type: integer, format: int32 }
 
   Pedido:
     type: object
@@ -123,6 +116,60 @@ definitions:
         type: array
         items: { $ref: "#/definitions/ItemOCOut" }
 
+  PedidoTipo:
+    type: string
+    enum: [COMPRA, VENTA]
+
+  PedidoEstado:
+    type: string
+    enum: [BORRADOR, APROBADO, EN_TRANSITO, RECIBIDO, DESPACHADO, CANCELADO]
+
+  PedidoItemIn:
+    type: object
+    required: [producto_id, cantidad]
+    properties:
+      producto_id:  { type: string, format: uuid }
+      cantidad:     { type: integer, format: int32, minimum: 1 }
+      precio_unitario: { type: number, format: double }
+      impuesto_pct: { type: number, format: double, minimum: 0, maximum: 100 }
+      descuento_pct: { type: number, format: double, minimum: 0, maximum: 100 }
+      sku:          { type: string }
+
+  # Nota: Swagger 2.0 no soporta oneOf; definimos un esquema flexible
+  PedidoCreate:
+    type: object
+    description: >
+      Para COMPRA: requiere proveedor_id (uuid) y bodega_destino_id.
+      Para VENTA: requiere cliente_id (int), vendedor_id (int) y bodega_origen_id.
+    required: [tipo, items]
+    properties:
+      tipo: { $ref: "#/definitions/PedidoTipo" }
+      # COMPRA
+      proveedor_id:      { type: string, format: uuid }
+      bodega_destino_id: { type: string, format: uuid }
+      # VENTA
+      cliente_id:        { type: integer, format: int32 }
+      vendedor_id:       { type: integer, format: int32 }
+      bodega_origen_id:  { type: string, format: uuid }
+      # comunes
+      observaciones:     { type: string, maxLength: 500 }
+      items:
+        type: array
+        items: { $ref: "#/definitions/PedidoItemIn" }
+
+  PedidoOut:
+    type: object
+    properties:
+      id:           { type: string, format: uuid }
+      codigo:       { type: string }
+      tipo:         { $ref: "#/definitions/PedidoTipo" }
+      estado:       { $ref: "#/definitions/PedidoEstado" }
+      subtotal:     { type: number, format: double }
+      impuesto_total: { type: number, format: double }
+      total:        { type: number, format: double }
+      creado_en:    { type: string, format: date-time }
+      actualizado_en: { type: string, format: date-time }
+
 paths:
   /v1/pedidos:
     get:
@@ -131,17 +178,32 @@ paths:
         address: "${MS_PEDIDOS_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
         disable_auth: true
-      summary: Listar pedidos (opcional por ID)
+      summary: Listar pedidos
       parameters:
         - $ref: "#/parameters/CountryHeader"
-        - name: id
+        - name: tipo
           in: query
           type: string
           required: false
+          description: "COMPRA|VENTA"
+        - name: estado
+          in: query
+          type: string
+          required: false
+          description: "BORRADOR|APROBADO|EN_TRANSITO|RECIBIDO|DESPACHADO|CANCELADO"
+        - name: limit
+          in: query
+          type: integer
+          format: int32
+          default: 50
+        - name: offset
+          in: query
+          type: integer
+          format: int32
+          default: 0
       responses:
-        200: { description: OK }
-        401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
-        403: { description: Forbidden,   schema: { $ref: "#/definitions/ErrorResponse" } }
+        200:
+          description: OK
         500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
 
     post:
@@ -150,7 +212,7 @@ paths:
         address: "${MS_PEDIDOS_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
         disable_auth: true
-      summary: Crear un pedido
+      summary: Crear un pedido (COMPRA o VENTA)
       parameters:
         - $ref: "#/parameters/CountryHeader"
         - name: body
@@ -158,9 +220,9 @@ paths:
           required: true
           schema: { $ref: "#/definitions/PedidoCreate" }
       responses:
-        201: { description: Creado, schema: { $ref: "#/definitions/Pedido" } }
+        201: { description: Creado, schema: { $ref: "#/definitions/PedidoOut" } }
+        200: { description: OK,     schema: { $ref: "#/definitions/PedidoOut" } }
         400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
-        401: { description: Unauthorized, schema: { $ref: "#/definitions/ErrorResponse" } }
         500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
 
     options:
@@ -173,6 +235,123 @@ paths:
         disable_auth: true
       responses:
         204: { description: No Content }
+
+
+  /v1/pedidos/{pedido_id}:
+    get:
+      operationId: Pedidos_GetById
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Obtener un pedido por ID
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/PedidoIdParam"
+      responses:
+        200: { description: OK, schema: { $ref: "#/definitions/PedidoOut" } }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflightPedidosById
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/PedidoIdParam"
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/pedidos/{pedido_id}/marcar-recibido:
+    post:
+      operationId: Pedidos_MarcarRecibido
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Marcar pedido de COMPRA como recibido
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/PedidoIdParam"
+      responses:
+        200: { description: OK, schema: { $ref: "#/definitions/PedidoOut" } }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+        404: { description: Not found,   schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflightPedidosRecibido
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/PedidoIdParam"
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/pedidos/{pedido_id}/marcar-despachado:
+    post:
+      operationId: Pedidos_MarcarDespachado
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Marcar pedido de VENTA como despachado
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/PedidoIdParam"
+      responses:
+        200: { description: OK, schema: { $ref: "#/definitions/PedidoOut" } }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+        404: { description: Not found,   schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflightPedidosDespachado
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/PedidoIdParam"
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/pedidos/{pedido_id}/cancelar:
+    post:
+      operationId: Pedidos_Cancelar
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Cancelar pedido
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/PedidoIdParam"
+      responses:
+        200: { description: OK, schema: { $ref: "#/definitions/PedidoOut" } }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+        404: { description: Not found,   schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflightPedidosCancelar
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/PedidoIdParam"
+      x-google-backend:
+        address: "${MS_PEDIDOS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
 
   /v1/inventario/producto:
     post:

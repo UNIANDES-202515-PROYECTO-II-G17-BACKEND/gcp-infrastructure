@@ -222,6 +222,24 @@ paths:
           type: integer
           format: int32
           default: 0
+        - name: fecha_compromiso
+          in: query
+          type: string
+          format: date
+          required: false
+          description: "Filtrar por fecha de compromiso exacta (AAAA-MM-DD)"
+        - name: fc_desde
+          in: query
+          type: string
+          format: date
+          required: false
+          description: "Filtrar desde fecha de compromiso (AAAA-MM-DD)"
+        - name: fc_hasta
+          in: query
+          type: string
+          format: date
+          required: false
+          description: "Filtrar hasta fecha de compromiso (AAAA-MM-DD)"
       responses:
         200:
           description: OK

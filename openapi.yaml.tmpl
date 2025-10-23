@@ -43,6 +43,27 @@ parameters:
     type: string
     format: uuid
 
+  UsuarioIdParam:
+    name: usuario_id
+    in: path
+    required: true
+    type: integer
+    format: int64
+
+  RutaIdParam:
+    name: ruta_id
+    in: path
+    required: true
+    type: string
+    format: uuid
+
+  ParadaIdParam:
+    name: parada_id
+    in: path
+    required: true
+    type: string
+    format: uuid
+
 definitions:
   ErrorResponse:
     type: object
@@ -1407,6 +1428,162 @@ paths:
         - $ref: "#/parameters/OrdenCompraIdParam"
       x-google-backend:
         address: "${MS_COMPRAS_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/usuarios/usuario/{usuario_id}:
+    get:
+      operationId: Usuarios_GetById
+      x-google-backend:
+        address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Obtener usuario por ID
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/UsuarioIdParam"
+      responses:
+        200: { description: OK }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+    options:
+      operationId: CorsPreflightUsuariosGetById
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/UsuarioIdParam"
+      x-google-backend:
+        address: "${MS_USUARIOS_AUTENTICACION_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/logistica/rutas/generar:
+    post:
+      operationId: Logistica_GenerarRutasPorFecha
+      x-google-backend:
+        address: "${MS_LOGISTICA_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Generar rutas por fecha y tipo de pedido
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: fecha
+          in: query
+          required: true
+          type: string
+          format: date
+        - name: tipo
+          in: query
+          required: true
+          type: string
+          enum: [VENTA, COMPRA]
+      responses:
+        202: { description: Rutas en proceso de generación }
+        200: { description: Rutas generadas }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+    options:
+      operationId: CorsPreflightLogisticaGenerar
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_LOGISTICA_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/logistica/rutas:
+    get:
+      operationId: Logistica_ListarRutasPorFecha
+      x-google-backend:
+        address: "${MS_LOGISTICA_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar rutas por fecha
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: fecha
+          in: query
+          required: true
+          type: string
+          format: date
+      responses:
+        200: { description: OK }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+    options:
+      operationId: CorsPreflightLogisticaRutas
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_LOGISTICA_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/logistica/rutas/{ruta_id}:
+    get:
+      operationId: Logistica_GetRutaById
+      x-google-backend:
+        address: "${MS_LOGISTICA_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Obtener ruta por ID
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/RutaIdParam"
+      responses:
+        200: { description: OK }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+    options:
+      operationId: CorsPreflightLogisticaRutaById
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/RutaIdParam"
+      x-google-backend:
+        address: "${MS_LOGISTICA_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/logistica/paradas/{parada_id}/estado:
+    patch:
+      operationId: Logistica_ActualizarEstadoParada
+      x-google-backend:
+        address: "${MS_LOGISTICA_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Actualizar estado de una parada
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/ParadaIdParam"
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [estado]
+            properties:
+              estado:
+                type: string
+                description: "Ej: PENDIENTE|EN_CAMINO|ENTREGADA|FALLIDA"
+      responses:
+        200: { description: OK }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+    options:
+      operationId: CorsPreflightLogisticaParadaEstado
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/ParadaIdParam"
+      x-google-backend:
+        address: "${MS_LOGISTICA_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
         disable_auth: true
       responses:

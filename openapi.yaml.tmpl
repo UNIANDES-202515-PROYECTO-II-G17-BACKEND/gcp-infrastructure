@@ -64,6 +64,20 @@ parameters:
     type: string
     format: uuid
 
+  PlanIdParam:
+    name: plan_id
+    in: path
+    required: true
+    type: string
+    format: uuid
+
+  VisitaIdParam:
+    name: visita_id
+    in: path
+    required: true
+    type: string
+    format: uuid
+
 definitions:
   ErrorResponse:
     type: object
@@ -1602,6 +1616,239 @@ paths:
         - $ref: "#/parameters/ParadaIdParam"
       x-google-backend:
         address: "${MS_LOGISTICA_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/ventas/planes:
+    post:
+      operationId: VentasCRM_Planes_Crear
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Crear Plan de Ventas
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            description: Payload de creación del plan de ventas
+      responses:
+        200: { description: OK }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+        409: { description: Conflicto (plan duplicado), schema: { $ref: "#/definitions/ErrorResponse" } }
+        500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_VentasCRM_Planes_Crear
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/ventas/planes/{plan_id}:
+    get:
+      operationId: VentasCRM_Planes_Obtener
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Obtener Plan de Ventas por ID
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/PlanIdParam"
+      responses:
+        200: { description: OK }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_VentasCRM_Planes_Obtener
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/PlanIdParam"
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/ventas/planes/{plan_id}/recalcular:
+    post:
+      operationId: VentasCRM_Planes_Recalcular
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Recalcular progreso del Plan de Ventas
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/PlanIdParam"
+        - name: d
+          in: query
+          required: false
+          type: string
+          format: date
+          description: Fecha a recalcular (AAAA-MM-DD)
+      responses:
+        200: { description: OK }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_VentasCRM_Planes_Recalcular
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/PlanIdParam"
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/visitas:
+    post:
+      operationId: VentasCRM_Visitas_Crear
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Crear visita
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            description: Payload de creación de visita
+      responses:
+        200: { description: OK }
+        409: { description: Conflicto (unicidad vendedor+cliente+fecha), schema: { $ref: "#/definitions/ErrorResponse" } }
+        400: { description: Bad request, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    get:
+      operationId: VentasCRM_Visitas_Listar
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar visitas
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: id_vendedor
+          in: query
+          required: false
+          type: string
+        - name: d
+          in: query
+          required: false
+          type: string
+          format: date
+          description: Fecha exacta (AAAA-MM-DD)
+        - name: limit
+          in: query
+          type: integer
+          format: int32
+          default: 50
+        - name: offset
+          in: query
+          type: integer
+          format: int32
+          default: 0
+      responses:
+        200: { description: OK }
+
+    options:
+      operationId: CorsPreflight_VentasCRM_Visitas_List_Create
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/visitas/{visita_id}:
+    get:
+      operationId: VentasCRM_Visitas_Obtener
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Obtener visita por ID (incluye detalle)
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/VisitaIdParam"
+      responses:
+        200: { description: OK }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_VentasCRM_Visitas_Obtener
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/VisitaIdParam"
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/visitas/{visita_id}/detalle:
+    post:
+      operationId: VentasCRM_Visitas_AgregarDetalle
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Agregar o actualizar detalle de visita (upsert)
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/VisitaIdParam"
+        - name: id_cliente
+          in: formData
+          required: true
+          type: string
+        - name: atendido_por
+          in: formData
+          required: false
+          type: string
+        - name: hallazgos
+          in: formData
+          required: false
+          type: string
+        - name: sugerencias_producto
+          in: formData
+          required: false
+          type: string
+      responses:
+        200: { description: OK }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_VentasCRM_Visitas_AgregarDetalle
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/VisitaIdParam"
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"
         disable_auth: true
       responses:

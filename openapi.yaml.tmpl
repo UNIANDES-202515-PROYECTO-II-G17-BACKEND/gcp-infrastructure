@@ -15,6 +15,12 @@ parameters:
     required: true
     type: string
 
+  VendedorIdParam:
+    name: id_vendedor
+    in: path
+    required: true
+    type: string
+
   ProductoIdParam:
     name: producto_id
     in: path
@@ -204,6 +210,24 @@ definitions:
       total:        { type: number, format: double }
       creado_en:    { type: string, format: date-time }
       actualizado_en: { type: string, format: date-time }
+
+  PlanDeVentasOut:
+    type: object
+    properties:
+      id:                { type: string, format: uuid }
+      id_vendedor:       { type: string }
+      periodo:           { type: string }
+      territorio:        { type: string }
+      meta_monto:        { type: number, format: double }
+      meta_unidades:     { type: integer, format: int32 }
+      meta_clientes:     { type: integer, format: int32 }
+      fecha_inicio:      { type: string, format: date }
+      fecha_fin:         { type: string, format: date }
+      activo:            { type: boolean }
+      ids_productos:
+        type: array
+        items: { type: string, format: uuid }
+      id_cliente_objetivo: { type: string }
 
 paths:
   /v1/pedidos:
@@ -790,6 +814,50 @@ paths:
 
     options:
       operationId: CorsPreflightInventarioProductosTodos
+      summary: CORS preflight
+      security: []
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/inventario/productos/upload-csv:
+    post:
+      operationId: inventario_upload_csv_productos
+      x-google-backend:
+        address: "${MS_INVENTARIO_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Carga masiva de productos vía CSV y asociación a proveedor
+      consumes:
+        - multipart/form-data
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - name: proveedor_id
+          in: header
+          required: true
+          type: string
+          format: uuid
+      responses:
+        200:
+          description: OK
+          schema:
+            type: object
+            properties:
+              total: { type: integer, format: int32 }
+              insertados: { type: integer, format: int32 }
+              errores:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    linea: { type: integer, format: int32 }
+                    error: { type: string }
+
+    options:
+      operationId: CorsPreflightInventarioUploadCsv
       summary: CORS preflight
       security: []
       x-google-backend:
@@ -1643,6 +1711,23 @@ paths:
         409: { description: Conflicto (plan duplicado), schema: { $ref: "#/definitions/ErrorResponse" } }
         500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
 
+    get:
+      operationId: VentasCRM_Planes_Listar
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar Planes de Ventas
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items: { $ref: "#/definitions/PlanDeVentasOut" }
+        500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
+
     options:
       operationId: CorsPreflight_VentasCRM_Planes_Crear
       summary: CORS preflight
@@ -1681,6 +1766,35 @@ paths:
         disable_auth: true
       responses:
         204: { description: No Content }
+
+  /v1/ventas/planes/{plan_id}/progreso:
+    get:
+      operationId: VentasCRM_Planes_Progreso
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Obtener Plan de Ventas por ID
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/PlanIdParam"
+      responses:
+        200: { description: OK }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_VentasCRM_Planes_Progreso
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/PlanIdParam"
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
 
   /v1/ventas/planes/{plan_id}/recalcular:
     post:
@@ -1847,6 +1961,39 @@ paths:
       security: []
       parameters:
         - $ref: "#/parameters/VisitaIdParam"
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      responses:
+        204: { description: No Content }
+
+  /v1/ventas/planes/vendedor/{id_vendedor}:
+    get:
+      operationId: VentasCRM_Planes_ListarPorVendedor
+      x-google-backend:
+        address: "${MS_VENTAS_CRM_URL}"
+        path_translation: "APPEND_PATH_TO_ADDRESS"
+        disable_auth: true
+      summary: Listar Planes de Ventas por Vendedor
+      parameters:
+        - $ref: "#/parameters/CountryHeader"
+        - $ref: "#/parameters/VendedorIdParam"
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items: { $ref: "#/definitions/PlanDeVentasOut" }
+        404: { description: Not found, schema: { $ref: "#/definitions/ErrorResponse" } }
+        500: { description: Server error, schema: { $ref: "#/definitions/ErrorResponse" } }
+
+    options:
+      operationId: CorsPreflight_VentasCRM_Planes_PorVendedor
+      summary: CORS preflight
+      security: []
+      parameters:
+        - $ref: "#/parameters/VendedorIdParam"
       x-google-backend:
         address: "${MS_VENTAS_CRM_URL}"
         path_translation: "APPEND_PATH_TO_ADDRESS"

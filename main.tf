@@ -28,7 +28,15 @@ locals {
   gateway_name = "medisupply-gw"
   vpc_network  = "default"
 
-  inbox_services = toset(local.services)
+  inbox_services = toset([
+    for service in local.services : service
+    if !contains([
+      "ms-usuarios-autenticacion",
+      "ms-integraciones",
+      "ms-compras"
+    ], service)
+  ])
+
 }
 
 # ---------- Service Accounts ----------
@@ -118,6 +126,11 @@ locals {
 resource "google_pubsub_topic" "inbox" {
   for_each = local.inbox_services
   name     = replace(each.key, "ms-", "")
+
+  lifecycle {
+    prevent_destroy = false
+    ignore_changes  = [labels]
+  }
 }
 
 resource "google_pubsub_subscription" "inbox_push" {
@@ -126,16 +139,22 @@ resource "google_pubsub_subscription" "inbox_push" {
   topic    = google_pubsub_topic.inbox[each.key].name
 
   push_config {
-    # SIN OIDC: entrega no autenticada
     push_endpoint = "${google_cloud_run_v2_service.svc[each.key].uri}/pubsub"
   }
 
-  ack_deadline_seconds = 20
+  ack_deadline_seconds       = 90
+  message_retention_duration = "86400s"
+
+  expiration_policy {
+    ttl = "604800s"
+  }
 
   retry_policy {
     minimum_backoff = "10s"
     maximum_backoff = "600s"
   }
+
+  enable_exactly_once_delivery = false
 }
 
 # ---------- Cloud Storage ----------

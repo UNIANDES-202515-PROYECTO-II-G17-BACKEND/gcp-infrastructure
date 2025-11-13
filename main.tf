@@ -202,6 +202,11 @@ resource "google_cloud_run_v2_service" "svc" {
             REGION                   = var.region
             JWT_SECRET_KEY           = "M1swN3JvNWMtZzI2LXNlY3JldC1mItand0LTIwMjUtbWlzd0A0MzAxIQ=="
             GATEWAY_BASE_URL         = var.gateway_base_url
+            TOPIC_PEDIDOS            = google_pubsub_topic.inbox["ms-pedidos"].id
+            TOPIC_INVENTARIO         = google_pubsub_topic.inbox["ms-inventario"].id
+            TOPIC_LOGISTICA          = google_pubsub_topic.inbox["ms-logistica"].id
+            TOPIC_VENTAS_CRM         = google_pubsub_topic.inbox["ms-ventas-crm"].id
+            TOPIC_TELEMETRIA         = google_pubsub_topic.inbox["ms-telemetria"].id
           }
         )
         content {
